@@ -1,9 +1,9 @@
 # 3D Human Body Surface Reconstruction System Front-end for Large Scale Data Collection
 User interface for capture. Take depth and RGB streams from two RGBD sensors. Generate 3D partial meshes for different capture poses. 
 
-## System Design
+## Capture System
 <p align="center">
-   <img width="400" src= demo/explain_projective.png>
+   <img width="600" src= demo/Capture System.PNG>
 </p>
 ## Processing Pipeline
 
