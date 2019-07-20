@@ -47,7 +47,7 @@ Our solution integrates the articulation constraint and global loop closure cons
 
 * Final Results
 <p align="center">
-   <img width="750" src= demo/Demo2.png>
+   <img width="600" src= demo/Demo2.png>
 </p>
 
 ## Accuracy Analysis 
