@@ -16,7 +16,7 @@ During the scan, the subject stands upright at approximately 125cm from the sens
 
 ## Processing Pipeline
 <p align="center">
-   <img width="600" src= demo/Pipeline_Overview.PNG>
+   <img width="600" src= demo/Pipeline_Overview.png>
 </p>
 
 ## Mesh Preprocessing
