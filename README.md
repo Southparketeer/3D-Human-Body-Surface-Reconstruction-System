@@ -24,6 +24,9 @@ In the back-end, we propose a non-rigid registration framework that is appropria
 ## Mesh Preprocessing
 Eight partial scan meshes are generated in this step corresponding to the eight poses. To generate the partial scan mesh efficiently and accurately, we first reconstruct low resolution (8mm) meshes from the two cameras to get an optimal extrinsic transformation. Then, we generate a high resolution (2.6mm) mesh by fusing two cameras’ depth images with the calculated transformation matrix. Partial meshes are generated using depth images from both sensors. An adaptive size Truncated Signed Distance Function (TSDF) volume (i.e. the size of volume fits the bounding box of scanned subject) is employed to optimize the memory and computation efficiency as well as to average out some of the sensor noise. The partial meshes are extracted from the TSDF volume using Marching Cubes. One extra scan without a subject is taken to estimate the ground plane parameters for ground clipping during preprocessing. 
 
+## Registration
+Our solution integrates the articulation constraint and global loop closure constraint into the as-rigid-as-possible non-rigid registration framework to maximize the accuracy of our reconstruction. The articulation constraint prevents connected segments from drifting apart during registration. The segment-wise global loop closure constraint ensures the registration error distributes evenly throughout the partial scans. This prevents alignments falling into local minima and enhances the registration quality where large occlusions exist (e.g. under upper arms or inner side of thighs). The as-rigid-as-possible deformation model prevents mesh near joints from collapsing, unnatural folding or stretching, which is an effective way to simulate the skin deformation under articulated motion. 
+
 ## Demo
 ### System Input
 
