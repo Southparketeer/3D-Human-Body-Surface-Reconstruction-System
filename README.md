@@ -32,22 +32,22 @@ Our solution integrates the articulation constraint and global loop closure cons
 ## Demo
 * Input depth data of different poses 
 <p align="center">
-   <img width="600" src= demo/Demo_Input.png>
+   <img width="750" src= demo/Demo_Input.png>
 </p>
 
 * Partial Mesh Generated for Each Scan Pose
 <p align="center">
-   <img width="600" src= demo/Mesh_Output.png>
+   <img width="750" src= demo/Mesh_Output.png>
 </p>
 
 * Non-rigid Registration
 <p align="center">
-   <img width="600" src= demo/DemoR.png>
+   <img width="750" src= demo/DemoR.png>
 </p>
 
 * Final Results
 <p align="center">
-   <img width="600" src= demo/Demo2.png>
+   <img width="750" src= demo/Demo2.png>
 </p>
 
 ## Accuracy Analysis 
