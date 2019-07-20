@@ -1,0 +1,245 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ICP">
+      <UniqueIdentifier>{fa0ab13b-7f2e-4905-a37a-ecd83f9964a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CUDA">
+      <UniqueIdentifier>{ce3ad561-dcf0-4e48-8b63-c6d62082d27c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="IMAGE_DISPLAY">
+      <UniqueIdentifier>{5c8aee34-56f2-4098-81a7-a4b1387f351f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SKELETON">
+      <UniqueIdentifier>{344f27c7-4c5a-443c-957d-669cbc6a5fb8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shape Morph">
+      <UniqueIdentifier>{771204b9-0170-4d2c-8e66-f9da5f3aacff}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\ICP\AlignGlobal.h">
+      <Filter>ICP</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ICP\AlignPair.h">
+      <Filter>ICP</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ICP\ArticulateGlobalAlign.h">
+      <Filter>ICP</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ICP\icp.h">
+      <Filter>ICP</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ICP\meshmodel.h">
+      <Filter>ICP</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ICP\meshtree.h">
+      <Filter>ICP</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ICP\OccupancyGrid.h">
+      <Filter>ICP</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\IMAGE_DISPLAY\GLdisplay.h">
+      <Filter>IMAGE_DISPLAY</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\IMAGE_DISPLAY\glSimpleDisplay.h">
+      <Filter>IMAGE_DISPLAY</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\IMAGE_DISPLAY\lodepng.h">
+      <Filter>IMAGE_DISPLAY</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\IMAGE_DISPLAY\png_io.h">
+      <Filter>IMAGE_DISPLAY</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\BoundedVolume.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\BoundingBox.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\config.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\CostVolElem.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\cu_bilateral.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\cu_blur.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\cu_depth_tools.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\cu_MCmask.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\cu_medium.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\cu_normals.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\cu_raycast.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\cu_sdffusion.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\cu_semi_global_matching.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\cu_undistort.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\cutil_math.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\disparity.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\Image.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\ImageApron.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\ImageIntrinsics.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\ImageKeyframe.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\InvalidValue.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\launch_utils.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\MarchingCubes.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\MarchingCubesTables.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\Mat.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\MatUtils.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\Memory.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\patch_score.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\pixel_convert.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\sampling.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\Sdf.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\CUDA\Volume.h">
+      <Filter>CUDA</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SKELETON\glConfig.h">
+      <Filter>SKELETON</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SKELETON\JointsEstimate.h">
+      <Filter>SKELETON</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SKELETON\LoadShader.h">
+      <Filter>SKELETON</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SKELETON\Model.h">
+      <Filter>SKELETON</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SKELETON\vec.h">
+      <Filter>SKELETON</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Base.h" />
+    <ClInclude Include="Source\cvUndistort.h" />
+    <ClInclude Include="Source\Helper.h" />
+    <ClInclude Include="Source\region_grow.h" />
+    <ClInclude Include="Source\StdAfx.h" />
+    <ClInclude Include="Source\timer.h" />
+    <ClInclude Include="Source\tsdfcuda.h" />
+    <ClInclude Include="Source\depthclean.h" />
+    <ClInclude Include="Source\2D Morph\depthclean.h">
+      <Filter>Shape Morph</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\2D Morph\diffuseWeight.h">
+      <Filter>Shape Morph</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\2D Morph\linearSkin.h">
+      <Filter>Shape Morph</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\2D Morph\pixelTriangle.h">
+      <Filter>Shape Morph</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\nanoflann.h" />
+    <ClInclude Include="Source\Nanoknn.h" />
+    <ClInclude Include="Source\MeshResampling.h" />
+    <ClInclude Include="Source\2D Morph\Rasterization.h">
+      <Filter>SKELETON</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\SKELETON\JointsEstimate2.h">
+      <Filter>SKELETON</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\IMAGE_DISPLAY\lodepng.cpp">
+      <Filter>IMAGE_DISPLAY</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\mainFusion.cpp" />
+    <ClCompile Include="Source\Source.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="Source\CUDA\cu_bilateral.cu">
+      <Filter>CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Source\CUDA\cu_blur.cu">
+      <Filter>CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Source\CUDA\cu_depth_tools.cu">
+      <Filter>CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Source\CUDA\cu_MCmask.cu">
+      <Filter>CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Source\CUDA\cu_medium.cu">
+      <Filter>CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Source\CUDA\cu_normals.cu">
+      <Filter>CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Source\CUDA\cu_raycast.cu">
+      <Filter>CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Source\CUDA\cu_sdffusion.cu">
+      <Filter>CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Source\CUDA\cu_semi_global_matching.cu">
+      <Filter>CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Source\CUDA\cu_undistort.cu">
+      <Filter>CUDA</Filter>
+    </CudaCompile>
+    <CudaCompile Include="Source\CUDA\MarchingCubes.cu">
+      <Filter>CUDA</Filter>
+    </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Source\SKELETON\phong.frag">
+      <Filter>SKELETON</Filter>
+    </None>
+    <None Include="Source\SKELETON\phong.vert">
+      <Filter>SKELETON</Filter>
+    </None>
+  </ItemGroup>
+</Project>

@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+﻿#include "StdAfx.h"
 #include "tsdfcuda.h"
 #include "Helper.h"
 #include "Base.h"
@@ -11,6 +11,8 @@
 #include "ICP/icp.h"
 #include "SKELETON/JointsEstimate.h"
 #include "depthclean.h"
+#include "Nanoknn.h"
+#include "SKELETON/JointsEstimate2.h"
 using namespace std;
 string ROOT("Data//DATA TEST6//");
 string DEPTHK0 = ROOT + "DEPTH//K0//";
@@ -20,7 +22,7 @@ string DEPTHK1_C = ROOT + "DEPTH_CLEAN//K1//";
 string ICPFILE = ROOT + "ICP//i";
 string FUSFILE = ROOT + "FUSE//f";
 string DBGFILE = ROOT + "DEBUG//";
-string GRUFILE = ROOT + "GROUND//Pose2_";
+string GRUFILE = ROOT + "GROUND//Pose1_";
 string FILE_GROUND_PLY = ROOT + "Ground.ply";
 //PARAMETER IN
 Mat4 Extrinstic_ir_ir;
@@ -136,7 +138,7 @@ void MeshClean(CMeshO & cm_in, CMeshO & cm_out, int dense = 5, float percent = 0
 	printf("remove %d component out of %d component\n", delInfo.first, delInfo.second);
 }
 
-void PoseGroundUp(CMeshO & mesh, const float4& GroundParam)
+void PoseGroundUp(CMeshO & mesh, const float4& GroundParam, Mat4* Tr = NULL)
 {
 	vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
 
@@ -173,16 +175,20 @@ void PoseGroundUp(CMeshO & mesh, const float4& GroundParam)
 	vcg::tri::UpdatePosition<CMeshO>::Matrix(mesh, gr);
 	vcg::tri::UpdateBounding<CMeshO>::Box(mesh);
 
-	R.setIdentity();
-	R(0,0) = cos(PI);
-	R(0,1) = -sin(PI);
-	R(1,0) = sin(PI);
-	R(1,1) = cos(PI);
-	R(1,3) = mesh.bbox.max.Y();
-	R(2,3) = -mesh.bbox.Center().Z();
-	gr.FromEigenMatrix(R);
+	Mat4 R2;
+	R2.setIdentity();
+	R2(0,0) = cos(PI);
+	R2(0,1) = -sin(PI);
+	R2(1,0) = sin(PI);
+	R2(1,1) = cos(PI);
+	R2(1,3) = mesh.bbox.max.Y();
+	R2(2,3) = -mesh.bbox.Center().Z();
+	gr.FromEigenMatrix(R2);
 	vcg::tri::UpdatePosition<CMeshO>::Matrix(mesh, gr);
-
+	if(Tr != NULL)
+	{
+		*Tr = R2 * R;
+	}
 }
 
 void MeshOutput( loo::BoundedVolume<loo::SDF_t, loo::TargetDevice, loo::Manage> &d_vol,	CMeshO& mesh_des, int dense = 5, float percent = 0.05)
@@ -296,6 +302,8 @@ void undistort( float* src, float* des, const loo::ImageIntrinsics& K, const loo
 		float c = ground_plane_param.z;
 		float d = ground_plane_param.w;
 
+		int clip_y_up = 512;
+		int clip_y_low = 0;
 		Concurrency::parallel_for(0, (h * w), [&](int j){
 			if(h_raycast_depth.ptr[j] > 2000 || h_raycast_depth[j] < 500) 
 			{
@@ -304,7 +312,10 @@ void undistort( float* src, float* des, const loo::ImageIntrinsics& K, const loo
 			}
 			int x = j % w;
 			int y = j / w;
-			if(x < 5)
+
+
+
+			if(x < 0)
 			{
 				des[j] = 0;
 				return;
@@ -319,28 +330,37 @@ void undistort( float* src, float* des, const loo::ImageIntrinsics& K, const loo
 				des[j] = 0;
 				return;
 			}
-			if(dis > 25) 
+
+
+			int s = 13;
+			int thr ;
+			thr = (idx_k == 2 || idx_k == 6) ? 2 - s : 0 - s;
+			thr = (idx_k == 0) ? -7 - s : 0 - s;
+			if(dis > thr) 
 			{
+				if( x > w / 3 && x < w && (idx_k == 2 || idx_k == 6))
+				{
+					clip_y_up = min(clip_y_up, y);
+					clip_y_low = max(clip_y_low, y);
+				}
 				return;
 			}
-			if(dis <15) {des[j] = 0;	 return;	}
+			if(dis <thr) {des[j] = 0;	 return;	}
 
-			Vet3 nv(h_raycast_normal.ptr[j].x, h_raycast_normal.ptr[j].y, h_raycast_normal.ptr[j].z);
-			if(fabsf(nv.dot(n_planev)) > 0.95)
-			{
-				int x = j % w;
-				int y = j / w;
-				if(x >= 3 && x < w - 3 && y >= 3 && y < h - 3)
-				{
-					Vet3 nvr(h_raycast_normal.ptr[j + 3].x, h_raycast_normal.ptr[j + 3].y, h_raycast_normal.ptr[j + 3].z);
-					Vet3 nvd(h_raycast_normal.ptr[j + 3 * w].x, h_raycast_normal.ptr[j + 3 * w].y, h_raycast_normal.ptr[j + 3 * w].z);
-					if(nvd.dot(nvr) > 0.95) {	des[j] = 0;	 return;	}
-				}
-			}
 		});
+
+		if(idx_k == 2 || idx_k == 6)
+		{
+			Concurrency::parallel_for(0, (h * w), [&](int j){
+				int y = j / w;
+				if(y < clip_y_up - 30 || y > clip_y_low + 30)
+					des[j] = 0;
+			});
+		}
 	}
 
-
+	if(idx_k == 2 && if_up == true)
+		return;
 	regiongrow::RegionGrowW(des, 500, 2000, 1000, DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT);
 
 
@@ -465,8 +485,8 @@ void textureMapping( CMeshO& Mesh_K, string File_Mesh_Output_png, const Mat4& Wo
 	vcg::tri::UpdateBounding<CMeshO>::Box(Mesh_K);
 	vcg::Box3f box = Mesh_K.bbox;
 	boundary_up = box.max.X() - 700;
-	boundary_dw = box.min.X() + 700;
-	int color_threshold = (k == 2 || k == 6) ? 250 : 250;
+	boundary_dw = (k == -1) ? -10000 : box.min.X() + 700;
+	int color_threshold = (k == 2 || k == 6) ? 210 : 210;
 
 	for(int i = 0 ; i < Mesh_K.vert.size(); i++)
 	{
@@ -560,6 +580,10 @@ void textureMapping( CMeshO& Mesh_K, string File_Mesh_Output_png, const Mat4& Wo
 		curr_v = NULL;
 	}
 
+	if(k == -1)
+	{
+		return;
+	}
 	for(int i = 0 ; i < imagePoints_K0.size(); i++)
 	{
 		int x = (int)(floor(imagePoints_K0[i].x + 0.5)) % 1920;
@@ -652,9 +676,11 @@ void initParameters()
 	CK_K1 = loo::ImageIntrinsics(1066.200437, 1063.336068, 976.353967, 525.870975 );
 	CD_K1 = loo::distortParam (0.039916, -0.029472, -0.000722, 0.000289, -0.010327 );
 	Mat_extr_ir_rgb_K1<< 0.999984, 0.003817, -0.004244, 0.052571,  -0.003798, 0.999983, 0.004376, -0.003229, 0.004261, -0.004360, 0.999981, -0.008469, 0.000000, 0.000000, 0.000000, 1.000000;
-
-	  Extrinstic_ir_ir<<0.999797, 0.013630, 0.014816, 631.609, -0.013410, 0.999801, -0.014797, -1.914, -0.015014, 0.014596, 0.999781, -5.209, 0.000000, 0.000000, 0.000000, 1.000000;
-	//office
+	//June 31 2016
+	//Extrinstic_ir_ir<<0.999797, 0.013630, 0.014816, 631.609,	-0.013410, 0.999801, -0.014797, -1.914,		-0.015014, 0.014596, 0.999781, -5.209,		0.000000, 0.000000, 0.000000, 1.000000;
+	//Sept 8 2016
+	Extrinstic_ir_ir<<0.999806, 0.013688, 0.014151, 633.551,	-0.013482, 0.999803, -0.014571, -3.696,		-0.014347, 0.014378, 0.999794, -3.254,		0.000000, 0.000000, 0.000000, 1.000000;
+	//office before group test
 	//Extrinstic_ir_ir<<0.999854, 0.011045, -0.013000, 638.635, -0.011146, 0.999908, -0.007720, -3.478, 0.012914, 0.007864, 0.999886, 11.630, 0.000000, 0.000000, 0.000000, 1.000000;
 	Mat4 Refine;
 	Refine.setIdentity();
@@ -734,7 +760,7 @@ void generateMesh_AdaptVolume(	CMeshO& Mesh,
 			memcpy(h_rawdepth_K0.ptr, depth_buff_K0.at(i).data(), DEPTH_RAW_HEIGHT * DEPTH_RAW_WIDTH * sizeof(float));
 			runTSDF(vol_adp, h_rawdepth_K0, Loo_tsdf_cw_K0, D_K0, K_K0, 0);
 		}
-		MeshOutput(vol_adp, meshK, 5, 0.01);
+		MeshOutput(vol_adp, meshK, 2, 0.01); //MeshOutput(vol_adp, meshK, 5, 0.01);
 	}
 
 	if(!buff_K0 && buff_K1)
@@ -744,7 +770,7 @@ void generateMesh_AdaptVolume(	CMeshO& Mesh,
 			memcpy(h_rawdepth_K1.ptr, depth_buff_K1.at(i).data(), DEPTH_RAW_HEIGHT * DEPTH_RAW_WIDTH * sizeof(float));
 			runTSDF(vol_adp, h_rawdepth_K1, Loo_tsdf_cw_K1, D_K1, K_K1, 0);
 		}
-		MeshOutput(vol_adp, meshK, 5,  0.01);
+		MeshOutput(vol_adp, meshK, 2,  0.01); //MeshOutput(vol_adp, meshK, 5,  0.01);
 	}
 
 	if(buff_K0 && buff_K1)
@@ -825,7 +851,20 @@ void init_GenerateMesh2(string File_Pose_0, string File_Pose_1, string File_Outp
 		memset(indepth.data(), 0, sizeof(float) * DEPTH_RAW_HEIGHT * DEPTH_RAW_WIDTH);
 		memset(outdepth.data(), 0, sizeof(float) * DEPTH_RAW_HEIGHT * DEPTH_RAW_WIDTH);
 		string s(File_Pose_0 + to_string(i) + ".png");
-		PNG_IO::PNG_to_array_depth(s.c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT,10,DEPTH_RAW_WIDTH - 10 ,10,DEPTH_RAW_HEIGHT - 10, true,  500, 1750);	
+		if(k == 6 || k == 2)
+		{
+			PNG_IO::PNG_to_array_depth(s.c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT, 0,DEPTH_RAW_WIDTH - 0 ,0,DEPTH_RAW_HEIGHT , true,  500, 1750  );	
+		}
+		else if(k == 0 || k == 4)
+		{
+			//PNG_IO::PNG_to_array_depth(s.c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT, 30,DEPTH_RAW_WIDTH - 60 ,0,DEPTH_RAW_HEIGHT , true,  500, 1750);	
+			PNG_IO::PNG_to_array_depth(s.c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT, 60,DEPTH_RAW_WIDTH - 60 ,0,DEPTH_RAW_HEIGHT , true,  500, 1750 );	
+		}
+		else
+		{
+			PNG_IO::PNG_to_array_depth(s.c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT, 60,DEPTH_RAW_WIDTH - 20 ,0,DEPTH_RAW_HEIGHT , true,  500, 1750 );	
+		}
+
 		std::cout<<"+";
 		undistort(indepth.data(), outdepth.data(), K_K0, D_K0, 0, NULL, true, k); 
 
@@ -850,19 +889,23 @@ void init_GenerateMesh2(string File_Pose_0, string File_Pose_1, string File_Outp
 						break;
 				}
 			}
+			int thr = ( k == 6 || k == 2) ? 210: 210;
 			//assume center exactly at 1250 mm away from the camera
 			Concurrency::parallel_for(0u, (UINT) w * h, [&](UINT j){
 				int x = j % w;
-				if(x > x_start - 200) return;
+				//if(x > x_start - 160) return;
+				if(x > x_start - thr) return;
 				if(outdepth[j] < 500 || outdepth[j] > 2000)	return;
-				if(outdepth[j] > 1000 && x < 100)
+				if(k == 6 || k == 2)
 				{
-					outdepth[j] = UINT16_MAX;
-					return;
+					if(outdepth[j] > 980  && x < 100)
+					{
+						outdepth[j] = UINT16_MAX;
+						return;
+					}
+					if(outdepth[j] > 980 )
+						outdepth[j] = UINT16_MAX;
 				}
-				//
-				if(outdepth[j] > 1000)
-					outdepth[j] = UINT16_MAX;
 			});
 		}
 #endif
@@ -870,14 +913,15 @@ void init_GenerateMesh2(string File_Pose_0, string File_Pose_1, string File_Outp
 		//clip face 1 and face 7 of the upper camera
 		if(k == 1 || k == 7 || k == 3 || k == 5)
 		{
-
+			int minx = 0;
+			int miny = 0;
 			if(i == 0)
 			{
 				int min_depth = INT_MAX;
 				int height = 0;
-				for(int x = 0; x < 512; x ++)
+				for(int x = 0; x < 512 ; x +=3)
 				{
-					for(int y = 0; y < 424; y ++)
+					for(int y = 0; y < 424 ; y +=3)
 					{
 						int curr = outdepth[y * w + x];
 						if( curr > 500 && curr < 2000)
@@ -887,6 +931,8 @@ void init_GenerateMesh2(string File_Pose_0, string File_Pose_1, string File_Outp
 								min_depth = curr;
 								Point3f a = PointBackProjection(K_K0, x, y, curr);
 								height = a.X();
+								miny = y;
+								minx = x;
 							}
 						}
 					}
@@ -894,33 +940,54 @@ void init_GenerateMesh2(string File_Pose_0, string File_Pose_1, string File_Outp
 						break;
 				}
 
-				if(k == 7 || k == 1)
-					clip_height_by_maxmin_depth = height + 200;
+				if(k == 3 || k == 5)
+					clip_height_by_maxmin_depth = height - 100;
 				else 
-					clip_height_by_maxmin_depth = height - 150;
+					clip_height_by_maxmin_depth = height - 100;//50;
 			}
 			//assume center exactly at 1250 mm away from the camera
 			Concurrency::parallel_for(0u, (UINT) w * h, [&](UINT j){
 				int x = j % w;
-			
+
 				if(outdepth[j] < 500 || outdepth[j] > 2000)	return;
 				int curr = outdepth[j];
 				int y = j / w;
 				Point3f a = PointBackProjection(K_K0, x, y, curr);
 
-			/*	if(outdepth[j] > 1400 || (outdepth[j] < 1100 && x > 50))
-						return;*/
-				if(outdepth[j] > 1400 && x > 50)
+				/*	if(outdepth[j] > 1400 || (outdepth[j] < 1100 && x > 50))
+				return;*/
+				if(outdepth[j] > 1400   && x > 80)
+					return;
+
+				if(k == 1)
+				{
+					//if(outdepth[j] < 1110 && x < 120 && x > 10)		return;
+					if(outdepth[j] < 1040    && x < 199 && x >= 10)
 						return;
+				}
+				else if(k == 7)
+				{
+					//if(outdepth[j] < 1070 && x < 120 && x > 10)		return;
+					if(outdepth[j] < 1030    && x < 185 && x >= 10)
+						return;
+				}
+
+				if(outdepth[j] < 1000    && x < 150 && x > 10)
+					return;
 				//
-				if(outdepth[j] < 1000 && x < 150)
+				if(k != 7)
+				{
+					if(outdepth[j] < 1025    && x < 240 && x >= 100)
 						return;
-				//
-				if(outdepth[j] < 1000 && x < 210 && x >= 100)
+				}
+				else 
+				{
+					if(outdepth[j] < 1030    && x < 240 && x >= 100 )
 						return;
+				}
 				if(a.X() < clip_height_by_maxmin_depth ) //male 150
 				{
-					
+
 					outdepth[j] = UINT_MAX;
 				}
 			});
@@ -946,10 +1013,15 @@ void init_GenerateMesh2(string File_Pose_0, string File_Pose_1, string File_Outp
 		memset(indepth.data(), 0, sizeof(float) * DEPTH_RAW_HEIGHT * DEPTH_RAW_WIDTH);
 		memset(outdepth.data(), 0, sizeof(float) * DEPTH_RAW_HEIGHT * DEPTH_RAW_WIDTH);
 		string s(File_Pose_1 + to_string(i) + ".png");
+		auto ss = 10;
 		if(k == 1 || k == 7)
-			PNG_IO::PNG_to_array_depth(s.c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT,10,DEPTH_RAW_WIDTH, 10, DEPTH_RAW_HEIGHT -10, true, 500, 1750);
+			PNG_IO::PNG_to_array_depth(s.c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT,40 + ss,DEPTH_RAW_WIDTH, 10, DEPTH_RAW_HEIGHT - 10, true, 500, 1650   );
+		else if(k == 0 || k == 4)
+			PNG_IO::PNG_to_array_depth(s.c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT,40 + ss,DEPTH_RAW_WIDTH, 10, DEPTH_RAW_HEIGHT - 10, true, 500, 1750  );
+		else if(k == 2 || k == 6)
+			PNG_IO::PNG_to_array_depth(s.c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT,20 + ss,DEPTH_RAW_WIDTH, 10, DEPTH_RAW_HEIGHT - 10, true, 500, 1750  );
 		else 
-			PNG_IO::PNG_to_array_depth(s.c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT,10,DEPTH_RAW_WIDTH, 30, DEPTH_RAW_HEIGHT -30, true, 500, 1750);
+			PNG_IO::PNG_to_array_depth(s.c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT,40 + ss,DEPTH_RAW_WIDTH, 10, DEPTH_RAW_HEIGHT - 10, true, 300, 1750  );
 		std::cout<<"+";
 		undistort(indepth.data(), outdepth.data(), K_K1, D_K1, 0, NULL, false, k);
 
@@ -965,13 +1037,13 @@ void init_GenerateMesh2(string File_Pose_0, string File_Pose_1, string File_Outp
 				{
 					//Up = Vector2i(380, 179);
 					keyPoint = Up;
-					lk = tanf(20 * 3.14 / 180);
+					lk = tanf(12 * 3.14 / 180);
 					lb = keyPoint.y() - lk * keyPoint.x();
 				}
 				else
 				{
 					keyPoint = Lo;
-					lk = tanf(-20 * 3.14 / 180);
+					lk = tanf(-15 * 3.14 / 180);
 					lb = keyPoint.y() - lk * keyPoint.x();
 				}
 				cout<<lk<<"  "<<lb<<endl;
@@ -982,26 +1054,99 @@ void init_GenerateMesh2(string File_Pose_0, string File_Pose_1, string File_Outp
 				int y = j / w;
 				if(x < Pv.x())
 					return;
-				if(x < Pv.x() + 100 && outdepth[j] < 1400 && abs(y - Pv.y()) < 80)
-					return;
-
-				if(outdepth[j] > 1250 || x > 480)
+				if((k == 7 || k == 1) && (outdepth[j] < 1000))
 				{
 					outdepth[j] = UINT16_MAX;
+					return;
 				}
-				
+				if(x < Pv.x() + 100 && outdepth[j] < 1360   && abs(y - Pv.y()) < 50)
+					return;
+				/*			if(outdepth[j] > 1400 && x > 256)
+				{
+				outdepth[j] = UINT16_MAX;
+				return;
+				}*/
+
+				if((outdepth[j] > 1310   && x > 250) || x > 490 ||(outdepth[j] > 1350   && x <= 250))
+				{
+					outdepth[j] = UINT16_MAX;
+					return;
+				}
+
+				if(k == 1)
+				{
+					keyPoint = Vector2i(512 - 100 - 20, 241);
+					lb = keyPoint.y() - lk * keyPoint.x();
+					if(keyPoint.x() < x && keyPoint.y() < y - 10)
+					{
+						outdepth[j] = UINT16_MAX;
+						return;
+					}
+				}
+				else if(k == 3)
+				{
+					keyPoint = Vector2i(512 - 108, 154);
+					lb = keyPoint.y() - lk * keyPoint.x();
+					if(keyPoint.x() < x && keyPoint.y() > y)
+					{
+						outdepth[j] = UINT16_MAX;
+						return;
+					}
+				}
+				else if(k == 5)
+				{
+					keyPoint = Vector2i(512 - 115 - 20, 232);
+					lb = keyPoint.y() - lk * keyPoint.x();
+					if(keyPoint.x() < x && keyPoint.y() < y)
+					{
+						outdepth[j] = UINT16_MAX;
+						return;
+					}
+				}
+				else
+				{
+					keyPoint = Vector2i(512 - 107 - 20 , 154);
+					lb = keyPoint.y() - lk * keyPoint.x();
+					if(keyPoint.x() < x && keyPoint.y() > y + 20)
+					{
+						outdepth[j] = UINT16_MAX;
+						return;
+					}
+				}
+
+
 				if( (k == 3 ) && (int) (x * lk + lb - y) >= 0 && y < keyPoint.y() + 10 )//&& x < keyPoint.x() + 20)
+				{
 					outdepth[j] = UINT16_MAX;
-
+					return;
+				}
 				if( (k == 5 ) && (int) (x * lk + lb - y) <= 0 && y > keyPoint.y() + 10)// && x < keyPoint.x() + 20)
+				{
+					outdepth[j] = UINT16_MAX;
+					return;
+				}
+				if( (k == 5 ) && x > 300 && outdepth[j] < 1025  )// && x < keyPoint.x() + 20)
+				{
+					outdepth[j] = UINT16_MAX;
+					return;
+				}
+
+				if(k == 7 && outdepth[j] < 1000   )
+				{
+					outdepth[j] = UINT16_MAX;
+					return;
+				}
+				if( (k == 7) && (int) (x * lk + lb - y) >= 0 && y < keyPoint.y() )// && x < keyPoint.x() + 20)
+				{
+					outdepth[j] = UINT16_MAX;
+					return;
+				}
+
+				if( (k == 1) && (int) (x * lk + lb - y) <= 0 && y > keyPoint.y())// && x < keyPoint.x() + 20)
+				{
 					outdepth[j] = UINT16_MAX;
 
-				if( (k == 7) && (int) (x * lk + lb - y) >= 0 && y < keyPoint.y()  && x < keyPoint.x() + 20)
-					outdepth[j] = UINT16_MAX;
-
-				if( (k == 1) && (int) (x * lk + lb - y) <= 0 && y > keyPoint.y() && x < keyPoint.x() + 20)
-					outdepth[j] = UINT16_MAX;
-				
+				}
 			});
 		}
 #endif
@@ -1014,6 +1159,7 @@ void init_GenerateMesh2(string File_Pose_0, string File_Pose_1, string File_Outp
 	std::cout<<endl;
 } 
 
+void meshSubdivided(CMeshO& mesh, Color4b& Label);
 void processMesh(string File_Pose_0, string File_Pose_1, string File_Pose_0_rgb, string File_Pose_1_rgb, string file_out_fus_png, string file_out_fus_ply, string File_Debug, int k)
 {
 	for(int i = 0; i < FRAME_NUM; i++)
@@ -1041,7 +1187,7 @@ void processMesh(string File_Pose_0, string File_Pose_1, string File_Pose_0_rgb,
 		box_adp_K0.Max().y * 0.5 + box_adp_K0.Min().y * 0.5, 
 		box_adp_K0.Max().z * 0.5 + box_adp_K0.Min().z * 0.5
 		);
-	generateMesh_AdaptVolume(Mesh_K0, &depth_buff_K0, NULL, 128, volcenter_K0, box_adp_K0, T_tsdf_cw_K0, T_tsdf_cw_K0);
+	generateMesh_AdaptVolume(Mesh_K0, &depth_buff_K0, NULL, 192, volcenter_K0, box_adp_K0, T_tsdf_cw_K0, T_tsdf_cw_K0);
 
 	//string(file_out_fus_png + "_Up.png")
 	textureMapping_SignleMesh(Mesh_K0, "",  color_buff_K0, Mat_extr_ir_rgb_K0,Mat4::Identity(), CK_K0, CD_K0);
@@ -1055,7 +1201,7 @@ void processMesh(string File_Pose_0, string File_Pose_1, string File_Pose_0_rgb,
 		box_adp_K1.Max().y * 0.5 + box_adp_K1.Min().y * 0.5, 
 		box_adp_K1.Max().z * 0.5 + box_adp_K1.Min().z * 0.5
 		);
-	generateMesh_AdaptVolume(Mesh_K1, NULL, &depth_buff_K1, 128, volcenter_K1, box_adp_K1, T_tsdf_cw_K0, T_tsdf_cw_K0);
+	generateMesh_AdaptVolume(Mesh_K1, NULL, &depth_buff_K1, 192, volcenter_K1, box_adp_K1, T_tsdf_cw_K0, T_tsdf_cw_K0);
 	//string(file_out_fus_png + "_Dw.png")
 	textureMapping_SignleMesh(Mesh_K1, "",  color_buff_K1, Mat_extr_ir_rgb_K1,Mat4::Identity(), CK_K1, CD_K1);
 	timerr.Print("Debug-Mesh1");
@@ -1082,9 +1228,8 @@ void processMesh(string File_Pose_0, string File_Pose_1, string File_Pose_0_rgb,
 	Log::LogMesh_CMeshO(&Mesh_K0, string(File_Debug + to_string(k) + "_Mesh_K0.ply").c_str(), true, true, true);
 	Log::LogMesh_CMeshO(&Mesh_K1, string(File_Debug + to_string(k) + "_Mesh_K1.ply").c_str(), true, true, true);
 
-	icprefine.icpAlignPair(Mesh_K0, Mesh_K1, 40, 50, 1000, 500);
+	icprefine.icpAlignPair(Mesh_K0, Mesh_K1, 40, 150, 1500, 500);
 	//icpAlignPair(vcg::CMeshO& source, vcg::CMeshO& target, int max_iter, float Min_Distance = 50, float Sample_size = 1500, float thr_color = 173)
-
 
 
 	Mat4 ICP_ICP;
@@ -1129,14 +1274,85 @@ void processMesh(string File_Pose_0, string File_Pose_1, string File_Pose_0_rgb,
 	box_adp_K.Max() = make_float3(Box_K.max.X(), Box_K.max.Y(), Box_K.max.Z());
 	box_adp_K.Min() = make_float3(Box_K.min.X(), Box_K.min.Y(), Box_K.min.Z());
 	float3 volcenter_K = make_float3(Box_K.Center().X(), Box_K.Center().Y(), Box_K.Center().Z());
+
 	generateMesh_AdaptVolume(Mesh_K, &depth_buff_K0, &depth_buff_K1, 384, volcenter_K, box_adp_K, T_tsdf_cw_K0, T_tsdf_cw_K1);
 
 	timerr.Print("Fusion-Mesh");
 
-	textureMapping(Mesh_K, file_out_fus_png, World_Camera_K1_refine, k);
-	PoseGroundUp(Mesh_K, ground_plane_param);
+	if(k == 0)
+	{
+		string strtest(FUSFILE + "test.ply");
+		Log::LogMesh_CMeshO(&Mesh_K, file_out_fus_ply.c_str(), true, true, false);
+		Log::LoadMesh(file_out_fus_ply.c_str(), Mesh_K);
+		//Processing;
+		meshSubdivided(Mesh_K, (Color4b)Color4b::Magenta);
+		Log::LogMesh_CMeshO(&Mesh_K, strtest.c_str(), true, true, false);
+	}
 
-	Log::LogMesh_CMeshO(&Mesh_K, file_out_fus_ply.c_str(), true, false, false);
+	Mat4 goundUp;
+	textureMapping(Mesh_K, file_out_fus_png, World_Camera_K1_refine, k);
+	/////////////////////////
+	PoseGroundUp(Mesh_K, ground_plane_param, &goundUp);
+	Log::LogMesh_CMeshO(&Mesh_K, file_out_fus_ply.c_str(), true, true, false);
+}
+
+void meshSubdivided(CMeshO& mesh, Color4b& Label)
+{
+	vcg::tri::UpdateNormal<CMeshO>::PerVertex(mesh);
+	CVertexO * vfirst = &mesh.vert[0];
+	int num = mesh.face.size();
+	vector<Point3i> oldFaces(mesh.face.size());
+	vector<Point3i> newFaces;
+	vector<CVertexO> newVerts;
+
+	int kk = 0;
+	for(int i = 0 ; i < num; i++)
+	{
+		CFaceO * fcurr = &mesh.face[i];
+		oldFaces[i].X() = mesh.face[i].V(0) - mesh.vert.data();
+		oldFaces[i].Y() = mesh.face[i].V(1) - mesh.vert.data();
+		oldFaces[i].Z() = mesh.face[i].V(2) - mesh.vert.data();
+
+		if(fcurr->V(0)->C().Equal(Label) && fcurr->V(1)->C().Equal(Label) && fcurr->V(2)->C().Equal(Label))
+		{
+			//Create and insert the new vertex
+			CVertexO newVertex;
+			newVertex.P() = (fcurr->V(0)->P() + fcurr->V(1)->P() + fcurr->V(2)->P()) / 3.;
+			newVertex.N() = (fcurr->V(0)->N() + fcurr->V(1)->N() + fcurr->V(2)->N()) / 3.;
+			newVertex.N().Normalize();
+			newVertex.C() = Color4b::Gray150;
+			newVerts.push_back(newVertex);
+
+			newFaces.emplace_back(fcurr->V(1) - mesh.vert.data(), fcurr->V(2) - mesh.vert.data(), mesh.vert.size() + kk);
+			newFaces.emplace_back(fcurr->V(2) - mesh.vert.data(), fcurr->V(0) - mesh.vert.data(), mesh.vert.size() + kk);
+
+			CVertexO* ptr_Last = mesh.vert.data() + mesh.vert.size();
+			fcurr->V(2) = ptr_Last;
+			kk++;
+		}
+	}
+	mesh.vert.reserve(newVerts.size() + mesh.vert.size());
+	mesh.face.reserve(mesh.face.size() + newFaces.size());
+	for(int i = 0; i < newVerts.size(); i++)
+	{
+		mesh.vert.push_back(newVerts[i]);
+	}
+	for(int i = 0; i < oldFaces.size(); i++)
+	{
+		mesh.face[i].V(0) = mesh.vert.data() + oldFaces[i].X();
+		mesh.face[i].V(1) = mesh.vert.data() + oldFaces[i].Y();
+		mesh.face[i].V(2) = mesh.vert.data() + oldFaces[i].Z();
+	}
+	for(int i = 0; i < newFaces.size(); i++)
+	{
+		CFaceO currf;
+		currf.V(0) = &mesh.vert[newFaces[i].X()];
+		currf.V(1) = &mesh.vert[newFaces[i].Y()];
+		currf.V(2) = &mesh.vert[newFaces[i].Z()];
+		mesh.face.push_back(currf);
+	}
+	mesh.vn = mesh.vert.size();
+	mesh.fn = mesh.face.size();
 }
 
 void generateGround()
@@ -1145,7 +1361,7 @@ void generateGround()
 	for(int i = 0 ; i < FRAME_NUM; i++ )
 	{
 		vector<float> indepth(DEPTH_RAW_WIDTH * DEPTH_RAW_HEIGHT);
-		PNG_IO::PNG_to_array_depth(string(GRUFILE + to_string(i) + ".png").c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT, 0, DEPTH_RAW_WIDTH - 0, 50, DEPTH_RAW_HEIGHT - 50, true, 700, 1500);
+		PNG_IO::PNG_to_array_depth(string(GRUFILE + to_string(i) + ".png").c_str(), indepth.data(), DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT, 0, DEPTH_RAW_WIDTH - 0, 50, DEPTH_RAW_HEIGHT - 50, true, 600, 1500);
 		std::cout<<"import depth image "<< i <<endl;
 		depth_buff_K1[i].resize(DEPTH_RAW_WIDTH * DEPTH_RAW_HEIGHT);
 		cvUndistort::cv_undistort(indepth.data(), depth_buff_K1[i].data(), K_K1, D_K1, DEPTH_RAW_WIDTH, DEPTH_RAW_HEIGHT);
@@ -1159,26 +1375,35 @@ void generateGround()
 		box_adp_Ground.Max().y * 0.5 + box_adp_Ground.Min().y * 0.5, 
 		box_adp_Ground.Max().z * 0.5 + box_adp_Ground.Min().z * 0.5
 		);
-	generateMesh_AdaptVolume(Mesh_Ground, NULL, &depth_buff_K1, 256, volcenter_K0, box_adp_Ground, T_tsdf_cw_K0, T_tsdf_cw_K0);
+	generateMesh_AdaptVolume(Mesh_Ground, NULL, &depth_buff_K1, 384, volcenter_K0, box_adp_Ground, T_tsdf_cw_K0, T_tsdf_cw_K0);
 	vcg::tri::Clean<CMeshO>::RemoveUnreferencedVertex(Mesh_Ground);
 	vcg::tri::Clean<CMeshO>::RemoveDuplicateVertex(Mesh_Ground);
 	Log::LogMesh_CMeshO(&Mesh_Ground, FILE_GROUND_PLY.c_str());
 }
 
-
+void boundaryCheck( CMeshO * m, vector<int> & boundary_idx);
+void MeshProcessingCleanBoundary(CMeshO& ms_label, CMeshO& mt_label, int raidus);
 int main(int argc, char** argv )
 {
-	Timer timerr;
-	timerr.Start();
+#if 1
+	Timer timerrr;
+
 	initParameters();
-	generateGround();
+	//generateGround();
 	vector<int> flag(8,1);
-	//flag[2] = 1;
-	//flag[5] = 1;
-	//flag[7] = 1;
+	//flag[4] = 1;
+	//flag[5] = 0;
 	//flag[1] = 1;
+	//flag[2] = 1;
+	//flag[2] = 1;
+	//flag[0] = 0;
+	//flag[0] = 1;
 	//flag[6] = 1;
-	estmateGroundParam();
+	////estmateGroundParam();
+	ground_plane_param.x = 44.5617;
+	ground_plane_param.y = -0.00309972;
+	ground_plane_param.z = -1 - 0.4;
+	ground_plane_param.w = 31766.5;
 	for(int k = 0 ; k < 8 ; k +=1)
 	{
 		if(flag[k] == 0)
@@ -1192,7 +1417,7 @@ int main(int argc, char** argv )
 		init_GenerateMesh2(file_depth_dir0, file_depth_dir1, file_depth_dir0_clean, file_depth_dir1_clean, k);
 	}
 
- 
+	timerrr.Start();
 	for(int k = 0 ; k < 8 ; k +=1)
 	{
 		if(flag[k] == 0)
@@ -1211,43 +1436,174 @@ int main(int argc, char** argv )
 		string file_out_debug = DBGFILE;
 		processMesh(file_depth_dir0_clean, file_depth_dir1_clean, file_rgb_dir0, file_rgb_dir1, file_out_fus_png, file_out_fus_ply, file_out_debug, k);
 	}
-	timerr.Print("fuse");
+	timerrr.Print("fuse");
 
 	//Init pose
 
-	
+#endif
 	PoseInit Pinit;
 	Pinit.init(FUSFILE);
-
+	for(int k = 0; k < NUM_FACE; k++)
+	{
+		CMeshO temp;
+		vcg::tri::Append<CMeshO, CMeshO>::MeshCopy(temp, *Pinit._cmv.at(k));
+		MeshProcessingCleanBoundary(temp, *Pinit._cmv.at(k), 0);
+	}
+	//clean the boundary	
 	Pinit.poseProcess();
 	for(int k = 0; k < NUM_FACE ; k++)
 	{
-		vcg::tri::Clean<CMeshO>::RemoveSmallConnectedComponentsSize(*Pinit._cmv[k], Pinit._cmv[k]->vert.size() * 0.05);
+		//vcg::tri::Clean<CMeshO>::RemoveSmallConnectedComponentsSize(*Pinit._cmv[k], Pinit._cmv[k]->vert.size() * 0.05);
 		Log::LogMesh_CMeshO(Pinit._cmv[k], string(ICPFILE +to_string(k) + ".ply").c_str());
 	}
 	Log::LogGNdeformd( &Pinit.mat, string(ICPFILE + "Info_ICP_TR.txt").c_str());
 
 
-	//Joint Estimate
-	JointEstimate JE;
-	vector<CMeshO*> _cmvjoint(8);
-	for(int k = 0; k < NUM_FACE ; k++)
+	for(int k = 0; k < NUM_FACE; k++)
 	{
-		_cmvjoint[k] = new CMeshO;
-		Log::LoadMesh(string(ICPFILE +to_string(k) + ".ply").c_str() , *_cmvjoint[k]);
-	}
-	JE.init(&_cmvjoint, argc, argv, false);
-	JE.estimateJoints(Color4b::Orange, Color4b::Yellow, Color4b::Magenta, Color4b::Blue, Color4b::LightPurple, Color4b::Cyan);
-	JE.estimateHands(Color4b::DarkDarkPurple, Color4b::DarkDarkBlue);
-	JE.estimateFeet(Color4b::DarkDarkRed, Color4b::DarkDarkGreen);
+		CMeshO tempm, tempm0;
+		CMeshO tempi, tempi0;
+		Log::LoadMesh(string(ICPFILE + to_string(k) + ".ply").c_str(), tempm0);
+		vcg::tri::Append<CMeshO, CMeshO>::MeshCopy(tempm, tempm0);
+		//MeshProcessingCleanBoundary(tempm, tempm0, 10);
+		//Log::LogMesh_CMeshO(&tempm, string(ICPFILE +to_string(k) + ".ply").c_str());
 
-	for(int k = 0; k < NUM_FACE ; k++)
-	{
-		Log::LogMesh_CMeshO(JE._cm->at(k), string(ICPFILE + "Mark_"+to_string(k) + ".ply").c_str());
+		vcg::tri::UpdateColor<CMeshO>::PerVertexConstant(tempm, Color4b::Gray150);
+		Log::LogMesh_CMeshO(&tempm, string(ICPFILE + "Mark_"  +to_string(k) + ".ply").c_str());
+
 	}
-	timerr.Print("all");
-	return 0;
+	//vector<CMeshO*> _cmvjoint(8);
+	//for(int k = 0; k < NUM_FACE ; k++)
+	//{
+	//	_cmvjoint[k] = new CMeshO;
+	//	Log::LoadMesh(string(ICPFILE +to_string(k) + ".ply").c_str() , *_cmvjoint[k]);
+	//	vcg::tri::UpdateColor<CMeshO>::PerVertexConstant(*_cmvjoint[k], Color4b::Gray150);
+	//	Log::LogMesh_CMeshO(_cmvjoint[k], string(ICPFILE + "Mark_" + to_string(k) + ".ply").c_str());
+	//}
+
+	//JointEstimate2 JE2;
+	//CMeshO JointMapFront, JointMapBack;
+	//Log::LoadMesh(string(ROOT + "f00_Scale_Jointmap.ply").c_str(), JointMapFront);
+	//Log::LoadMesh(string(ROOT + "f40_Scale_Jointmap.ply").c_str(), JointMapBack);
+	//JE2.init(&_cmvjoint, JointMapFront, JointMapBack);
+	////JE2.AutoSegment_Simple();
+	//JE2.AutoSegment_Complete();
+	//JE2.LogCurrentStatus(ICPFILE);
+
+	////Joint Estimate
+	//JointEstimate JE;
+	//JE.init(&_cmvjoint, argc, argv, false);
+	//JE.estimateJoints(Color4b::Orange, Color4b::Yellow, Color4b::Magenta, Color4b::Blue, Color4b::LightPurple, Color4b::Cyan);
+	//JE.estimateHands(Color4b::DarkDarkPurple, Color4b::DarkDarkBlue);
+	//JE.estimateFeet(Color4b::DarkDarkRed, Color4b::DarkDarkGreen);
+
+	//for(int k = 0; k < NUM_FACE ; k++)
+	//{
+	//	Log::LogMesh_CMeshO(JE._cm->at(k), string(ICPFILE + "Mark_"+to_string(k) + ".ply").c_str());
+	//}
+	//timerr.Print("all");
 	return 0;
 
 }
 
+
+void MeshProcessingCleanBoundary(CMeshO& ms_label, CMeshO& mt_label, int raidus)
+{
+	Nanoknn nano_knn(ms_label);
+	nano_knn.buildNano();
+	vector<int> boundary_idx;
+	boundaryCheck(&ms_label, boundary_idx);
+	vcg::tri::UpdateFlags<CMeshO>::VertexClearB(ms_label);
+
+	if(raidus != 0)
+	{
+		for(int i = 0 ; i < boundary_idx.size(); i++)
+		{
+			int idx = boundary_idx[i];
+			vector<int> knnidx;
+			nano_knn.findKNNNoSelf(ms_label.vert.at(idx), raidus, knnidx);
+			ms_label.vert[idx].SetB();
+			for(int i = 0 ; i < knnidx.size() ; i++)
+			{
+				ms_label.vert[knnidx[i]].SetB();
+			}
+		}
+		Concurrency::parallel_for(0u, (UINT)ms_label.vert.size(), [&](UINT i){
+			if(ms_label.vert[i].IsB())
+			{
+				if(ms_label.vert[i].P().Y() < 500 || ms_label.vert[i].C().Equal((Color4b)Color4b::Red) || ms_label.vert[i].C().Equal((Color4b)Color4b::Green))
+				{
+					return;
+				}
+				ms_label.vert[i].P().X() = sqrtf(-1);
+				ms_label.vert[i].P().Y() = sqrtf(-1);
+				ms_label.vert[i].P().Z() = sqrtf(-1);
+			}
+		});
+
+		vcg::tri::UpdateFlags<CMeshO>::VertexClearB(ms_label);
+		vcg::tri::Clean<CMeshO>::RemoveDegenerateVertex(ms_label);
+	}
+	vcg::tri::Append<CMeshO, CMeshO>::MeshCopy(mt_label, ms_label);
+}
+
+void boundaryCheck( CMeshO * m, vector<int> & boundary_idx)
+{
+	cout<<"boundary check..."<<endl;
+	vcg::tri::UpdateFlags<CMeshO>::Clear(*m);
+	vcg::tri::UpdateTopology<CMeshO>::FaceFace(*m);
+	vcg::tri::UpdateFlags<CMeshO>::VertexClearV(*m);
+	boundary_idx.clear();
+	boundary_idx.reserve(5000);
+	CVertexO* first = m->vert.data();
+
+	for(int k = 0 ; k < (*m).FN(); k++)
+	{
+		int a[3] = {0};
+		if(face::IsBorder((*m).face[k],0)) //edge 0-1
+		{
+			if(!(*m).face[k].V(0)->IsV())
+			{
+				a[0] = 1;
+				(*m).face[k].V(0)->SetV();
+			}
+			if(!(*m).face[k].V(1)->IsV())
+			{
+				a[1] = 1;
+				(*m).face[k].V(1)->SetV();
+			}
+		}
+		if(face::IsBorder((*m).face[k],1)) //edge 1-2
+		{
+			if(!(*m).face[k].V(2)->IsV())
+			{
+				a[2] = 1;
+				(*m).face[k].V(2)->SetV();
+			}
+			if(!(*m).face[k].V(1)->IsV())
+			{
+				a[1] = 1;
+				(*m).face[k].V(1)->SetV();
+			}
+		}
+		if(face::IsBorder((*m).face[k],2)) //edge 2-0
+		{
+			if(!(*m).face[k].V(2)->IsV())
+			{
+				a[2] = 1;
+				(*m).face[k].V(2)->SetV();
+			}
+			if(!(*m).face[k].V(0)->IsV())
+			{
+				a[0] = 1;
+				(*m).face[k].V(0)->SetV();
+			}
+		} 
+		if(a[0])
+			boundary_idx.push_back((*m).face[k].V(0) - first);
+		if(a[1])
+			boundary_idx.push_back((*m).face[k].V(1) - first);
+		if(a[2])
+			boundary_idx.push_back((*m).face[k].V(2) - first);
+	}
+}
