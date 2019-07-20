@@ -30,6 +30,7 @@ Eight partial scan meshes are generated in this step corresponding to the eight 
 Our solution integrates the articulation constraint and global loop closure constraint into the as-rigid-as-possible non-rigid registration framework to maximize the accuracy of our reconstruction. The articulation constraint prevents connected segments from drifting apart during registration. The segment-wise global loop closure constraint ensures the registration error distributes evenly throughout the partial scans. This prevents alignments falling into local minima and enhances the registration quality where large occlusions exist (e.g. under upper arms or inner side of thighs). The as-rigid-as-possible deformation model prevents mesh near joints from collapsing, unnatural folding or stretching, which is an effective way to simulate the skin deformation under articulated motion. 
 
 ## Demo
-### System Input
+<p align="center">
+   <img width="600" src= demo/Pipeline_Overview.png>
+</p>
 
-### System Output
