@@ -56,7 +56,7 @@ Our solution integrates the articulation constraint and global loop closure cons
 </p>
 
 ## Install
-dependency: 
+Dependency: 
 1. VCG library http://vcg.isti.cnr.it/vcglib/ for geometry processing
 2. Eigen http://eigen.tuxfamily.org/index.php?title=Main_Page for matrix computation
 3. CUDA https://developer.nvidia.com/cuda-downloads for CUDA kernel
