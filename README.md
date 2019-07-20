@@ -37,11 +37,11 @@ Our solution integrates the articulation constraint and global loop closure cons
 
 * Non-rigid Registration
 <p align="center">
-   <img width="600" src= demo/demo/DemoR.png>
+   <img width="600" src= demo/DemoR.png>
 </p>
 
 * Final Results
 <p align="center">
-   <img width="600" src= demo/demo/Demo2.png>
+   <img width="600" src= demo/Demo2.png>
 </p>
 
