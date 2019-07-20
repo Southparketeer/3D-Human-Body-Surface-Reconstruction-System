@@ -1,4 +1,4 @@
-# 3D Human Body Surface Reconstruction System Back-end Partial Mesh Reconstruction
+# 3D Human Body Surface Reconstruction System
 User interface for capture. Take depth and RGB streams from two RGBD sensors. Generate 3D partial meshes for different capture poses. 
 
 ## Data Acquisition
