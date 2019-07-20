@@ -45,3 +45,9 @@ Our solution integrates the articulation constraint and global loop closure cons
    <img width="600" src= demo/Demo2.png>
 </p>
 
+## Accuracy Analysis 
+<p align="center">
+   <img width="600" src= demo/Accuracy.png>
+</p>
+
+
