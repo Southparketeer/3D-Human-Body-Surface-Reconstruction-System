@@ -1,5 +1,5 @@
 # 3D Human Body Surface Reconstruction System
-User interface for capture. Take depth and RGB streams from two RGBD sensors. Generate 3D partial meshes for different capture poses. 
+User interface for capture. Take depth and RGB streams from two RGBD sensors. Generate 3D partial meshes for different capture poses. Using non-rigid registration methods to stitch partial meshes in different poses to generate a water-tight 3D body shape. 
 
 ## Data Acquisition
 ### System Setup
