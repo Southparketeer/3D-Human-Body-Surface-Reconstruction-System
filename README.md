@@ -16,8 +16,10 @@ During the scan, the subject stands upright at approximately 125cm from the sens
 <p align="center">
    <img width="600" src= demo/Pipeline_Overview.png>
 </p>
+
 ### System Front-end 
 In the front-end, our hardware design aims to maximize the data accuracy by exploring the sensor noise pattern. We analyze sensor noise characteristics through the system calibration, which includes an experiment to measure and model the sensor depth bias as a function of distance and a standard sensor intrinsic and extrinsic calibration. Accordingly, we set up our system to achieve a good sensor performance and the depth bias is corrected in real-time during capture. The depth and color images are the outputs of our front-end, which will be processed in the back-end for 3D reconstruction. 
+
 ### System Back-end 
 In the back-end, we propose a non-rigid registration framework that is appropriate for our semi-nonrigid pose assumption (i.e. various human body poses appear as high degree of deformation around skeletal joints while modest deformations appear around link segments). Partial scan meshes are reconstructed during mesh preprocessing. Then, skeletal joint positions are inferred through multimodality registration. With partial scan meshes and skeleton data, the 3D human body surface is reconstructed through our non-rigid registration framework.
 
