@@ -9,6 +9,11 @@ Our capture system consists of two Kinect v2 sensors, one 28" twin camera slide 
    <img width="600" src= demo/Capture_System.PNG>
 </p>
 
+### Capture
+During the scan, the subject stands upright at approximately 125cm from the sensors holding an “A pose”, i.e. arms open roughly 45 degrees and feet open roughly 45cm. The data acquisition takes eight scans (each representing a pose) in total with the user rotating roughly 45 degrees between each scan and holding the pose for approximately 1 second. 30 frames of depth image and 1 frame of color image are collected for each scan. 
+
+
+
 ## Processing Pipeline
 
 ## Demo
