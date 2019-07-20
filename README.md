@@ -3,7 +3,7 @@ User interface for capture. Take depth and RGB streams from two RGBD sensors. Ge
 
 ## System Overview
 <p align="center">
-   <img width="600" src= demo/Pipeline_Overview.png>
+   <img width="700" src= demo/Pipeline_Overview.png>
 </p>
 
 ### System Front-end 
@@ -32,17 +32,17 @@ Our solution integrates the articulation constraint and global loop closure cons
 ## Demo
 * Input Depth Data of Different Poses 
 <p align="center">
-   <img width="750" src= demo/Demo_Input.png>
+   <img width="700" src= demo/Demo_Input.png>
 </p>
 
 * Partial Mesh Generated from Different Poses
 <p align="center">
-   <img width="750" src= demo/Mesh_Output.png>
+   <img width="700" src= demo/Mesh_Output.png>
 </p>
 
 * Non-rigid Registration
 <p align="center">
-   <img width="750" src= demo/DemoR.png>
+   <img width="700" src= demo/DemoR.png>
 </p>
 
 * Final Results
