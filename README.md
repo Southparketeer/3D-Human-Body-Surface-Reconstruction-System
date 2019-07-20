@@ -3,7 +3,7 @@ User interface for capture. Take depth and RGB streams from two RGBD sensors. Ge
 
 ## System Overview
 <p align="center">
-   <img width="600" src= demo/Pipeline_Overview.png>
+   <img width="700" src= demo/Pipeline_Overview.png>
 </p>
 
 ### System Front-end 
@@ -30,14 +30,19 @@ Eight partial scan meshes are generated in this step corresponding to the eight 
 Our solution integrates the articulation constraint and global loop closure constraint into the as-rigid-as-possible non-rigid registration framework to maximize the accuracy of our reconstruction. The articulation constraint prevents connected segments from drifting apart during registration. The segment-wise global loop closure constraint ensures the registration error distributes evenly throughout the partial scans. This prevents alignments falling into local minima and enhances the registration quality where large occlusions exist (e.g. under upper arms or inner side of thighs). The as-rigid-as-possible deformation model prevents mesh near joints from collapsing, unnatural folding or stretching, which is an effective way to simulate the skin deformation under articulated motion. 
 
 ## Demo
-* Partial Mesh Generated for Each Scan Pose
+* Input Depth Data of Different Poses 
 <p align="center">
-   <img width="600" src= demo/Mesh_Output.png>
+   <img width="700" src= demo/Demo_Input.png>
+</p>
+
+* Partial Mesh Generated from Different Poses
+<p align="center">
+   <img width="700" src= demo/Mesh_Output.png>
 </p>
 
 * Non-rigid Registration
 <p align="center">
-   <img width="600" src= demo/DemoR.png>
+   <img width="700" src= demo/DemoR.png>
 </p>
 
 * Final Results
@@ -51,13 +56,13 @@ Our solution integrates the articulation constraint and global loop closure cons
 </p>
 
 ## Install
-dependency: 
+Dependency: 
 1. VCG library http://vcg.isti.cnr.it/vcglib/ for geometry processing
 2. Eigen http://eigen.tuxfamily.org/index.php?title=Main_Page for matrix computation
 3. CUDA https://developer.nvidia.com/cuda-downloads for CUDA kernel
-4. OpenCV https://www.opengl.org/ for calibration
-5. Microsoft Kinect SDK https://www.microsoft.com/en-us/download/details.aspx?id=44561 
-   or libfreenect2 https://github.com/OpenKinect/libfreenect2 for depth strame input from Kinect
+4. OpenCV https://www.opengl.org/ for calibration，undistortion
+5. libpng http://www.libpng.org/pub/png/libpng.html for read and write image as .png
+6. zlib  https://www.zlib.net/ for installing libpng
    
 ## Reference
 [1] Lu, Yao, Shang Zhao, Naji Younes, and James K. Hahn. "Accurate nonrigid 3d human body surface reconstruction using commodity depth sensors." Computer animation and virtual worlds 29, no. 5 (2018): e1807.
