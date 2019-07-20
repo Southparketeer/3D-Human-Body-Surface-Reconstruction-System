@@ -55,9 +55,9 @@ dependency:
 1. VCG library http://vcg.isti.cnr.it/vcglib/ for geometry processing
 2. Eigen http://eigen.tuxfamily.org/index.php?title=Main_Page for matrix computation
 3. CUDA https://developer.nvidia.com/cuda-downloads for CUDA kernel
-4. OpenCV https://www.opengl.org/ for calibration
-5. Microsoft Kinect SDK https://www.microsoft.com/en-us/download/details.aspx?id=44561 
-   or libfreenect2 https://github.com/OpenKinect/libfreenect2 for depth strame input from Kinect
+4. OpenCV https://www.opengl.org/ for calibration，undistortion
+5. libpng http://www.libpng.org/pub/png/libpng.html for read and write image as .png
+6. zlib  https://www.zlib.net/ for installing libpng
    
 ## Reference
 [1] Lu, Yao, Shang Zhao, Naji Younes, and James K. Hahn. "Accurate nonrigid 3d human body surface reconstruction using commodity depth sensors." Computer animation and virtual worlds 29, no. 5 (2018): e1807.
