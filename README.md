@@ -3,7 +3,7 @@ User interface for capture. Take depth and RGB streams from two RGBD sensors. Ge
 
 ## System Overview
 <p align="center">
-   <img width="700" src= demo/Pipeline_Overview.png>
+   <img width="700" src= demo/Pipeline.png>
 </p>
 
 ### System Front-end 
