@@ -179,7 +179,8 @@ namespace vcg
 		public:
 			enum {maxcnt =3};
 			OGMeshInfo() {Init(); used=false;}
-			void Init() {
+			void Init() 
+			{
 				coverage=0;area=0;
 			}
 
