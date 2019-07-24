@@ -22,7 +22,8 @@ namespace vcg
 	* It build a grid and for each cell count how many meshes passes through that cell
 	* It compute the overlaps and returns a set of arcs with overlap greater than a given threshold.
 	*/
-	class OccupancyGrid{
+	class OccupancyGrid
+	{
 	public:
 		class AlignPair
 		{
@@ -86,13 +87,14 @@ namespace vcg
 				cnt[last]=-1;
 				assert(last>=0);
 
-				if(last>=_MAX_MCV_SIZE) {
-
+				if(last>=_MAX_MCV_SIZE) 
+				{
 					abort();
 				}
 			}
 
-			void UnSet(int i) {
+			void UnSet(int i) 
+			{
 				if(last==0)	return;
 				short *pt=std::lower_bound(cnt,cnt+last,i);
 				if(*pt!=i) return;
@@ -136,16 +138,19 @@ namespace vcg
 
 			void Dump() const
 			{
-				for(int i=0;i<64;++i) {
+				for(int i=0;i<64;++i) 
+				{
 					if((i%32)==0) printf(" " );
 					if(cnt[i]) printf("1"); else printf("0");
 				}
 			}
 
-			bool operator < (const MeshCounterB &c) const {
+			bool operator < (const MeshCounterB &c) const 
+			{
 				int ii=0;
 				if(cnt==c.cnt) return false;
-				while(ii<_MAX_MCB_SIZE){
+				while(ii<_MAX_MCB_SIZE)
+				{
 					if(cnt[ii]!=c.cnt[ii]) return cnt[ii]<c.cnt[ii];
 					++ii;
 				}
@@ -189,7 +194,8 @@ namespace vcg
 		};
 		/* Classe con informazioni su un arco plausibile
 		*/
-		class OGArcInfo {
+		class OGArcInfo 
+		{
 		public:
 
 			enum sort {AREA,NORM_AREA,DEGREE};
@@ -352,7 +358,8 @@ void OccupancyGrid::ComputeTotalArea()
 	MaxCount=0;
 	int sz=G.size();
 	for(int i=0;i<sz;++i)
-		if(!G.grid[i].Empty()) {
+		if(!G.grid[i].Empty()) 
+		{
 			ccnt++;
 			if(G.grid[i].Count()>MaxCount) MaxCount=G.grid[i].Count();
 		}
@@ -378,8 +385,10 @@ void OccupancyGrid::ComputeUsefulMesh(FILE *elfp)
 
 	Use.clear();
 	int i,j,m,mcnt=0;
-	for(m=0;m<mn;++m) {
-		if(VM[m].used && VM[m].area>0) {
+	for(m=0;m<mn;++m) 
+	{
+		if(VM[m].used && VM[m].area>0) 
+		{
 			mcnt++;
 			UpdCovg[m]=VM[m].coverage;
 			UpdArea[m]=VM[m].area;
@@ -387,7 +396,8 @@ void OccupancyGrid::ComputeUsefulMesh(FILE *elfp)
 	}
 
 	int sz=G.size();
-	if(elfp) {
+	if(elfp) 
+	{
 		fprintf(elfp,"\n\nComputing Usefulness of Meshes of %i(on %i) meshes\n Og with %i / %i fill ratio %i max mesh per cell\n\n",mcnt,mn,TotalArea,sz,MaxCount);
 		fprintf(elfp,"\n");
 
@@ -411,10 +421,12 @@ void OccupancyGrid::ComputeUsefulMesh(FILE *elfp)
 		for(i=0;i<sz;++i)
 		{
 			MeshCounter &mc=G.grid[i];
-			if(mc.IsSet(best))	{
+			if(mc.IsSet(best))	
+			{
 				mc.UnSet(best);
 				for(j=0;j<mn;++j)
-					if(mc.IsSet(j)) {
+					if(mc.IsSet(j)) 
+					{
 						--UpdArea[j];
 						UpdCovg[j]-=mc.Count();
 					}
