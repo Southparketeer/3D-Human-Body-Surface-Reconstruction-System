@@ -25,12 +25,6 @@
 #include <wrap/io_trimesh/io_mask.h>
 #include <wrap/io_trimesh/additionalinfo.h>
 
-//#include <wrap/io_trimesh/import.h>
-//#include <wrap/io_trimesh/export_ply.h>
-//#include <wrap/ply/plylib.h>
-//#include <wrap/ply/plystuff.h>
-//#include <wrap/ply/plylib.cpp>
-
 #include <list>
 #include <String>
 #include <wrap/gl/math.h>
@@ -255,17 +249,17 @@ int MeshModel::io2mm(int single_iobit)
 	case tri::io::Mask::IOM_VERTTEXCOORD			: return  MM_VERTTEXCOORD;
 	case tri::io::Mask::IOM_VERTRADIUS				: return  MM_VERTRADIUS;
 
-	case tri::io::Mask::IOM_FACEINDEX   			: return  MM_FACEVERT  ;
-	case tri::io::Mask::IOM_FACEFLAGS   			: return  MM_FACEFLAG  ;
-	case tri::io::Mask::IOM_FACECOLOR   			: return  MM_FACECOLOR  ;
+	case tri::io::Mask::IOM_FACEINDEX   			: return  MM_FACEVERT;
+	case tri::io::Mask::IOM_FACEFLAGS   			: return  MM_FACEFLAG;
+	case tri::io::Mask::IOM_FACECOLOR   			: return  MM_FACECOLOR;
 	case tri::io::Mask::IOM_FACEQUALITY 			: return  MM_FACEQUALITY;
 	case tri::io::Mask::IOM_FACENORMAL  			: return  MM_FACENORMAL ;
 
 	case tri::io::Mask::IOM_WEDGTEXCOORD 			: return  MM_WEDGTEXCOORD;
 	case tri::io::Mask::IOM_WEDGCOLOR				: return  MM_WEDGCOLOR;
-	case tri::io::Mask::IOM_WEDGNORMAL   			: return  MM_WEDGNORMAL  ;
+	case tri::io::Mask::IOM_WEDGNORMAL   			: return  MM_WEDGNORMAL;
 
-	case tri::io::Mask::IOM_BITPOLYGONAL   			: return  MM_POLYGONAL  ;
+	case tri::io::Mask::IOM_BITPOLYGONAL   			: return  MM_POLYGONAL;
 
 	default:
 		assert(0);

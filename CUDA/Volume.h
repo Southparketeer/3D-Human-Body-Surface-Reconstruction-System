@@ -272,9 +272,6 @@ namespace loo
 			const int ix = fmaxf(fminf(w-2, floorf(pf.x) ), 1);
 			const int iy = fmaxf(fminf(h-2, floorf(pf.y) ), 1);
 			const int iz = fmaxf(fminf(d-2, floorf(pf.z) ), 1);
-			//        const int ix = floorf(pf.x);
-			//        const int iy = floorf(pf.y);
-			//        const int iz = floorf(pf.z);
 			const float fx = pf.x - ix;
 			const float fy = pf.y - iy;
 			const float fz = pf.z - iz;
@@ -293,9 +290,6 @@ namespace loo
 				lerp(lerp(vz,vxz,fx), lerp(vyz,vxyz,fx), fy),
 				fz
 				);
-
-			//        const int3 p = make_int3(pf);
-			//        return GetBackwardDiffDxDyDz(p);
 		}
 
 		//////////////////////////////////////////////////////

@@ -349,10 +349,6 @@ void ICP::icpAlignPair(vcg::CMeshO& source, vcg::CMeshO& target, int max_iter, f
 			stop = true; 
 			continue;
 		}
-	/*	else if(fabs(lastErr - initialErr) < 0.0001)
-		{
-			stop = true;
-		}*/
 		tri::UpdatePosition<CMeshO>::Matrix(source, result.Tr);
 		Tr_ICP = result.Tr * Tr_ICP;
 	}
